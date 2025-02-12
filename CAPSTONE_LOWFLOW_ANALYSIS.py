@@ -15,9 +15,7 @@ ds = xarray.open_zarr(s3store)
 results = []
 # Replace linkno_files with the dictionary of linkno and file paths
 linkno_files = {
-    160266239: ("/Users/rachel1/Downloads/rwanda_4326.csv"),
-    160205470: ('/Users/rachel1/Downloads/rachel nile/fix/221001.csv'),
-    160233531: ('/Users/rachel1/Downloads/rachel nile/fix/270001.csv'),
+    670031759: ("/Users/rachel1/Downloads/87-01-01_Q.csv"),
 
 }
 # Code to make sure that we are correctly reading in the observed data
@@ -109,7 +107,7 @@ titles = []
 
 fig, axes = plt.subplots(1, 3, figsize=(15, 5), sharey=True)
 
-for linkno, (file_path, i) in linkno_files.items():
+for linkno, (file_path) in linkno_files.items():
     print(linkno)
     df = ds['Qout'].sel(rivid=linkno).to_dataframe()
     df = df.reset_index().set_index('time').pivot(columns='rivid', values='Qout')
@@ -119,12 +117,10 @@ for linkno, (file_path, i) in linkno_files.items():
 
     # This needs to be fixed to read in the observed data correctly
     # start_row = find_start_row(file_path)
-    # gauge = pd.read_csv(
-    #   file_path,
-    #    skiprows=start_row,
-    #   header=None,  # Do not use the first row as column names
-    #   parse_dates=[0]  # Parse the first column as datetime
-    #  )
+    gauge = pd.read_csv(
+        file_path,
+        parse_dates=[0]
+    )
     gauge.columns = ['Datetime', 'Streamflow (m3/s)']
     gauge = gauge[gauge['Streamflow (m3/s)'] >= 0]
     # If no specific format is known and you need to handle two-digit years:
@@ -260,7 +256,7 @@ for linkno, (file_path, i) in linkno_files.items():
 
             # Ensure the directory exists before saving
             #FIX THIS FILE PATH
-            save_path = f'/Users/rachel1/Downloads/rachel nile/heatmaps/comparison_{linkno}_{month_name}.png'
+            save_path = f'/Users/rachel1/Downloads/rachel nile/heatmaps/AAAAAcomparison_{linkno}_{month_name}.png'
 
             plt.savefig(save_path, dpi=500, bbox_inches='tight')
 
