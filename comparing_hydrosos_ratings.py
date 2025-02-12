@@ -7,6 +7,7 @@ import geoglows
 from scipy.stats import chi2_contingency
 import seaborn as sns
 import matplotlib.pyplot as plt
+import matplotlib.lines as mlines
 from sklearn.metrics import cohen_kappa_score
 
 bucket_uri = 's3://geoglows-v2-retrospective/retrospective.zarr'
@@ -65,10 +66,6 @@ def find_start_row(file_path, column_index=1):
                     continue
     return 0
 
-
-
-import pandas as pd
-import numpy as np
 
 def process_groupby(flowdata):
     flowdata.columns = ['date', 'flow']
@@ -281,27 +278,56 @@ for linkno, (file_path, i) in linkno_files.items():
             plt.figure(figsize=(10, 6))
 
             # Plot lines
-            plt.plot(month_data["date"], month_data[f"{linkno}_gauge"], label='Gauge', color='blue', linewidth=2)
-            plt.plot(month_data["date"], month_data[f"{linkno}_geoglows"], label='GeoGLOWS', color='orange',
-                     linewidth=2)
+            #plt.plot(month_data["date"], month_data[f"{linkno}_gauge"], label='Gauge', color='blue', linewidth=2)
+            #plt.plot(month_data["date"], month_data[f"{linkno}_geoglows"], label='GeoGLOWS', color='orange',
+              #       linewidth=2)
 
-            # Add scatter points
-            plt.scatter(month_data["date"], month_data[f"{linkno}_gauge"], color='blue', edgecolor='black', s=50,
-                        label='_nolegend_')
-            plt.scatter(month_data["date"], month_data[f"{linkno}_geoglows"], color='orange', edgecolor='black', s=50,
-                        label='_nolegend_')
+            # Create the scatter points
+
+            # Define colors based on whether gauge and geoglows values match
+            colors = ['green' if gauge_val == geoglows_val else 'blue' for gauge_val, geoglows_val in
+                      zip(month_data[f"{linkno}_gauge"], month_data[f"{linkno}_geoglows"])]
+
+            # Create scatter points for gauge
+            plt.scatter(month_data["date"], month_data[f"{linkno}_gauge"], color=colors, edgecolor='black', s=50,
+                        marker='o', label='Gauge')
+
+            # Create scatter points for geoglows (excluding green because it's already plotted)
+            plt.scatter(month_data["date"], month_data[f"{linkno}_geoglows"],
+                        color=['orange' if c != 'green' else 'green' for c in colors],
+                        edgecolor='black', s=50, marker='o', label='GHM HydroSOS')
+
+            # Add vertical lines to connect points from the same date
+            for date, gauge_val, geoglows_val in zip(month_data["date"], month_data[f"{linkno}_gauge"],
+                                                     month_data[f"{linkno}_geoglows"]):
+                plt.vlines(x=date, ymin=gauge_val, ymax=geoglows_val, colors='gray', linestyles='dashed')
 
             # Add titles, labels, and legend
-            month_name = month_data["date"].dt.strftime('%B').iloc[0]  # Get month name
+            if not month_data.empty:
+                month_name = month_data["date"].dt.strftime('%B').iloc[0]
+            else:
+                month_name = "Unknown"
+
             plt.title(f'Comparison of Gauge and GHM HydroSOS Categories of {linkno} for {month_name}', fontsize=14)
             plt.xlabel('Date', fontsize=12)
             plt.ylabel('Values', fontsize=12)
+
             # Update y-axis labels
             y_labels = {1: "Low Flow", 2: "Below Normal", 3: "Normal", 4: "Above Normal", 5: "High Flow"}
             plt.yticks(ticks=list(y_labels.keys()), labels=list(y_labels.values()))
-            plt.legend()
+
+            # **Fix the Legend:**
+            blue_marker = mlines.Line2D([], [], color='blue', marker='o', linestyle='None', markersize=8, label='Gauge')
+            orange_marker = mlines.Line2D([], [], color='orange', marker='o', linestyle='None', markersize=8, label='GHM HydroSOS')
+            green_marker = mlines.Line2D([], [], color='green', marker='o', linestyle='None', markersize=8, label='Agreement (Gauge & GHM)')
+            plt.legend(handles=[blue_marker, orange_marker, green_marker], title="Data Source")
+
             plt.grid(True)
-            plt.savefig(f'/Users/rachel1/Downloads/rachel nile/heatmaps/comparison_{linkno}_{month_name}.png', dpi=500, bbox_inches='tight')
+
+            # Ensure the directory exists before saving
+            save_path = f'/Users/rachel1/Downloads/rachel nile/heatmaps/comparison_{linkno}_{month_name}.png'
+            #os.makedirs(os.path.dirname(save_path), exist_ok=True)
+            plt.savefig(save_path, dpi=500, bbox_inches='tight')
 
             # Show the plot
             plt.show()

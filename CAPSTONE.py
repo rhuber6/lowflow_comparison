@@ -19,3 +19,10 @@ df = df[df[linkno] >= 0]
 df.reset_index(inplace=True)
 print(df)
 print("SUCCESS!")
+
+linkno_files = {
+    160266239: ("/Users/rachel1/Downloads/rwanda_4326.csv"),
+    160205470: ('/Users/rachel1/Downloads/rachel nile/fix/221001.csv'),
+    160233531: ('/Users/rachel1/Downloads/rachel nile/fix/270001.csv'),
+
+}
